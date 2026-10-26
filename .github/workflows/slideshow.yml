@@ -1,0 +1,103 @@
+name: Slideshow
+
+# Rebuild the poster list on every push, then publish the static site.
+# A push made with GITHUB_TOKEN does not start another run and does not
+# trigger a branch-based Pages build, so this workflow deploys the site itself
+# when Pages is set to GitHub Actions.
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: slideshow-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      pages_build_type: ${{ steps.pages.outputs.build_type }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Regenerate slides.js
+        run: node scripts/generate-slides.js
+
+      - name: Commit slides.js when posters changed
+        continue-on-error: true
+        run: |
+          set -eu
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add slides.js
+          if git diff --cached --quiet -- slides.js; then
+            echo "slides.js already matches assets/slides"
+            exit 0
+          fi
+          git commit -m "Regenerate slides.js from assets/slides"
+          for attempt in 1 2 3; do
+            if ! git pull --rebase origin "$GITHUB_REF_NAME"; then
+              git rebase --abort || true
+              sleep $((attempt * 2))
+              continue
+            fi
+            node scripts/generate-slides.js
+            if ! git diff --quiet -- slides.js; then
+              git add slides.js
+              git commit -m "Regenerate slides.js from assets/slides"
+            fi
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "Could not push regenerated slides.js" >&2
+          exit 1
+
+      - name: Read Pages source
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          build_type=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type || echo unknown)
+          echo "build_type=${build_type}" >> "$GITHUB_OUTPUT"
+          echo "Pages build_type=${build_type}"
+
+      - name: Remind to publish with GitHub Actions
+        if: github.ref == 'refs/heads/main' && steps.pages.outputs.build_type != 'workflow'
+        run: |
+          echo "::warning::GitHub Pages is still deploying from a branch. Commits this workflow pushes with GITHUB_TOKEN do not trigger that build, so a newly added poster would not go live until some later non-bot push. Set Settings → Pages → Build and deployment → Source to GitHub Actions. This workflow will then publish the static site, including the regenerated slides.js, on the same push."
+
+      - name: Setup Pages
+        if: github.ref == 'refs/heads/main' && steps.pages.outputs.build_type == 'workflow'
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        if: github.ref == 'refs/heads/main' && steps.pages.outputs.build_type == 'workflow'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: publish
+    if: github.ref == 'refs/heads/main' && needs.publish.outputs.pages_build_type == 'workflow'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
