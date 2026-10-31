@@ -11,6 +11,8 @@ const root = path.join(__dirname, '..');
 const slidesDir = path.join(root, 'assets', 'slides');
 const outFile = path.join(root, 'slides.js');
 const imageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+// Bump when poster pixels change so a TV that cached the old files fetches them again.
+const ASSET_VERSION = '2';
 
 function listPosters(dir) {
   if (!fs.existsSync(dir)) {
@@ -26,7 +28,7 @@ function listPosters(dir) {
 
 function render(files) {
   const lines = files.map((name) => {
-    const src = 'assets/slides/' + encodeURIComponent(name);
+    const src = 'assets/slides/' + encodeURIComponent(name) + '?v=' + ASSET_VERSION;
     return '  ' + JSON.stringify(src);
   });
   return [
