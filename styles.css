@@ -1,16 +1,16 @@
-:root{--cyan:#26A4CB;--bg:#02070b;--seconds:18s}
+:root{--gold:#FDB714;--bg:#111111;--seconds:18s}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
 body{font-family:Arial,Helvetica,sans-serif;color:#fff}
-#stage{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;cursor:none}
+#stage{position:fixed;inset:0;background:#000;display:grid;place-items:center;cursor:none}
 #slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:1;transition:opacity .55s ease;user-select:none;-webkit-user-drag:none}
 #slide.out{opacity:.05}
 #fade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.08),transparent 15%,transparent 84%,rgba(0,0,0,.18))}
 #progress{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.08)}
-#progress span{display:block;width:0;height:100%;background:var(--cyan)}
+#progress span{display:block;width:0;height:100%;background:var(--gold)}
 #progress span.run{animation:timer var(--seconds) linear forwards}
 @keyframes timer{from{width:0}to{width:100%}}
-#counter{position:absolute;right:18px;top:14px;padding:7px 10px;border:1px solid rgba(38,164,203,.45);border-radius:7px;background:rgba(0,0,0,.48);font-size:13px;font-weight:700;letter-spacing:.08em;opacity:0;transition:opacity .2s}
+#counter{position:absolute;right:18px;top:14px;padding:7px 10px;border:1px solid rgba(253,183,20,.45);border-radius:7px;background:rgba(0,0,0,.48);font-size:13px;font-weight:700;letter-spacing:.08em;opacity:0;transition:opacity .2s}
 #controls{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:8px;opacity:0;transition:opacity .2s}
-#controls button{width:44px;height:38px;border-radius:8px;border:1px solid rgba(38,164,203,.55);background:rgba(0,0,0,.72);color:#fff;font-size:17px;cursor:pointer}
+#controls button{width:44px;height:38px;border-radius:8px;border:1px solid rgba(253,183,20,.55);background:rgba(0,0,0,.72);color:#fff;font-size:17px;cursor:pointer}
 #stage:hover{cursor:default}#stage:hover #controls,#stage:hover #counter{opacity:1}
 @media (max-width:700px){#controls{bottom:14px}#controls button{width:40px;height:36px}}
